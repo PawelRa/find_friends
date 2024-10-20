@@ -1,13 +1,23 @@
 import streamlit as st
 import pandas as pd
+import plotly.express as px
+from pycaret.clustering import load_model, predict_model
 
 DATA = 'welcome_survey_simple_v1.csv'
 
+MODEL_NAME = "welcome_survey_clustering_pipeline_v1"
+
+@st.cache_data
+def get_model():
+    return load_model(MODEL_NAME)
+
 @st.cache_data
 def get_all_participants():
+    model = get_model()
     all_df = pd.read_csv(DATA, sep=';')
+    df_with_clusters = predict_model(model, data=all_df)
 
-    return all_df
+    return df_with_clusters
 
 with st.sidebar:
     st.header("Powiedz nam coś o sobie")
@@ -28,9 +38,43 @@ with st.sidebar:
         }
     ])
 
-st.write("Wybrane dane:")
-st.dataframe(person_df, hide_index=True)
-
+model = get_model()
 all_df = get_all_participants()
-st.write("Przykładowe osoby z bazy:")
-st.dataframe(all_df.sample(10), hide_index=True)
+
+predicted_cluster_id = predict_model(model, data=person_df)["Cluster"].values[0]
+st.write(f"Najbliżej Ci do klastra {predicted_cluster_id}")
+same_cluster_df = all_df[all_df["Cluster"] == predicted_cluster_id]
+st.metric("Liczba Twoich znajomych", len(same_cluster_df))
+
+st.header("Osoby z grupy")
+fig = px.histogram(same_cluster_df.sort_values("age"), x="age")
+fig.update_layout(
+    title="Rozkład wieku w grupie",
+    xaxis_title="Wiek",
+    yaxis_title="Liczba osób",
+)
+st.plotly_chart(fig)
+
+fig = px.histogram(same_cluster_df, x="edu_level")
+fig.update_layout(
+    title = "Rozkład wykształcenia w grupie",
+    xaxis_title = "Wykształcenie",
+    yaxis_title = "Liczba osób",
+)
+st.plotly_chart(fig)
+
+fig = px.histogram(same_cluster_df, x="fav_animals")
+fig.update_layout(
+    title = "Rozkład ulubionych zwierząt w grupie",
+    xaxis_title = "Ulubione zwierzęta",
+    yaxis_title = "Liczba osób",
+)
+st.plotly_chart(fig)
+
+fig = px.histogram(same_cluster_df, x="fav_place")
+fig.update_layout(
+    title = "Rozkład ulubionych miejsc w grupie",
+    xaxis_title = "Ulubione miejsce",
+    yaxis_title = "Liczba osób",
+)
+st.plotly_chart(fig)
