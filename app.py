@@ -1,3 +1,4 @@
+import json
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -7,9 +8,16 @@ DATA = 'welcome_survey_simple_v1.csv'
 
 MODEL_NAME = "welcome_survey_clustering_pipeline_v1"
 
+CLUSTER_NAMES_AND_DESCRIPTIONS = 'welcome_survey_cluster_names_and_descriptions_v1.json'
+
 @st.cache_data
 def get_model():
     return load_model(MODEL_NAME)
+
+@st.cache_data
+def get_cluster_names_and_descriptions():
+    with open(CLUSTER_NAMES_AND_DESCRIPTIONS, "r", encoding='utf-8') as f:
+        return json.loads(f.read())
 
 @st.cache_data
 def get_all_participants():
@@ -40,9 +48,13 @@ with st.sidebar:
 
 model = get_model()
 all_df = get_all_participants()
+cluster_names_and_descriptions = get_cluster_names_and_descriptions()
 
 predicted_cluster_id = predict_model(model, data=person_df)["Cluster"].values[0]
-st.write(f"Najbliżej Ci do klastra {predicted_cluster_id}")
+predicted_cluster_data = cluster_names_and_descriptions[predicted_cluster_id]
+
+st.header(f"Najbliżej Ci do klastra {predicted_cluster_data['name']}")
+st.markdown(predicted_cluster_data['description'])
 same_cluster_df = all_df[all_df["Cluster"] == predicted_cluster_id]
 st.metric("Liczba Twoich znajomych", len(same_cluster_df))
 
