@@ -1,5 +1,4 @@
-json
 streamlit
 pandas
-plotly.express
+plotly
 pycaret
